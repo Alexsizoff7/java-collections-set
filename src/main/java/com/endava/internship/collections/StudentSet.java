@@ -1,23 +1,29 @@
 package com.endava.internship.collections;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 public class StudentSet implements Set<Student> {
 
-    private int capacity;
-    private List <LinkedList<Student>> buckets;
-    private int size = 0;
     private static final int DEFAULT_CAPACITY = 16;
+    private int capacity;
+    private List<LinkedList<Student>> buckets;
+    private int size = 0;
 
-    public StudentSet (int capacity) {
+    public StudentSet(int capacity) {
         this.capacity = capacity;
-        buckets = new ArrayList <>(capacity);
-        for(int i=0; i < capacity;i++) {
+        buckets = new ArrayList<>(capacity);
+        for (int i = 0; i < capacity; i++) {
             buckets.add(new LinkedList<>());
-        } 
+        }
     }
 
-    public StudentSet () {
+    public StudentSet() {
         this(DEFAULT_CAPACITY);
     }
 
@@ -33,14 +39,14 @@ public class StudentSet implements Set<Student> {
 
     @Override
     public boolean contains(Object o) {
-        if (o instanceof Student) {
+        if (o instanceof Student || o == null) {
             Student student = (Student) o;
-            int index = calculatedIndex(student);
-            LinkedList <Student> bucket = buckets.get(index);
+            int index = calculateIndex(student);
+            LinkedList<Student> bucket = buckets.get(index);
             for (Student st : bucket) {
-                if (student.hashCode() == st.hashCode() && student.equals(st)) {
-                    return true;
-                }
+                if (o == null && st == null) return true;
+                if (o != null && st == null) return false;
+                if (st.equals(student)) return true;
             }
         }
         return false;
@@ -53,9 +59,9 @@ public class StudentSet implements Set<Student> {
 
     @Override
     public Object[] toArray() {
-        Object [] array = new Object[size];
+        Object[] array = new Object[size];
         int counter = 0;
-        for (List <Student> bucket : buckets) {
+        for (List<Student> bucket : buckets) {
             for (Student student : bucket) {
                 array[counter] = student;
                 counter++;
@@ -72,25 +78,42 @@ public class StudentSet implements Set<Student> {
         }
 
         int counter = 0;
-        for (List <Student> bucket : buckets) {
+        for (List<Student> bucket : buckets) {
             for (Student student : bucket) {
                 ts[counter] = (T) student;
                 counter++;
             }
         }
-            for (int i = counter; counter<ts.length-1; i++) {
-                ts[i] = null;
-            }
-
-        // counter < ts.len-1 then ts[counter+1, ..., len-1] = null
+        for (int i = counter; i < ts.length - 1; i++) {
+            ts[i] = null;
+        }
         return ts;
+    }
+
+    private boolean hasNull() {
+        for (LinkedList<Student> bucket : buckets) {
+            for (Student st : bucket) {
+                if (st == null) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
     public boolean add(Student student) {
         resizeCheck();
-        int index = calculatedIndex(student);
-        LinkedList <Student> bucket = buckets.get(index);
+        int index = calculateIndex(student);
+        LinkedList<Student> bucket = buckets.get(index);
+        if (student == null && hasNull()) {
+            return false;
+        }
+        if (student == null) {
+            bucket.add(student);
+            size++;
+            return true;
+        }
         for (Student st : bucket) {
             if (student.hashCode() == st.hashCode() && student.equals(st)) {
                 return false;
@@ -103,11 +126,18 @@ public class StudentSet implements Set<Student> {
 
     @Override
     public boolean remove(Object o) {
-        if (o instanceof Student) {
+        if (o instanceof Student || o == null) {
             Student student = (Student) o;
-            int index = calculatedIndex(student);
-            LinkedList <Student> bucket = buckets.get(index);
+            int index = calculateIndex(student);
+            LinkedList<Student> bucket = buckets.get(index);
             for (Student st : bucket) {
+                if (o == null && st != null) continue;
+                if (o == null && st == null) {
+                    bucket.remove(student);
+                    size--;
+                    return true;
+                }
+                if (o != null && st == null) continue;
                 if (student.hashCode() == st.hashCode() && student.equals(st)) {
                     bucket.remove(student);
                     size--;
@@ -121,9 +151,9 @@ public class StudentSet implements Set<Student> {
     @Override
     public void clear() {
 
-        List <LinkedList<Student>> clearedBuckets;
-        clearedBuckets = new ArrayList <>(capacity);
-        for(int i=0; i < capacity; i++) {
+        List<LinkedList<Student>> clearedBuckets;
+        clearedBuckets = new ArrayList<>(capacity);
+        for (int i = 0; i < capacity; i++) {
             clearedBuckets.add(new LinkedList<>());
         }
         buckets = clearedBuckets;
@@ -141,13 +171,13 @@ public class StudentSet implements Set<Student> {
         return modified;
     }
 
-    private int calculatedIndex (Student student) {
-        int hashCode = student.hashCode();
+    private int calculateIndex(Student student) {
+        int hashCode = student == null ? 0 : student.hashCode();
         return Math.abs(hashCode % capacity);
     }
 
-    void resizeCheck () {
-        if (size>(capacity*0.75)) {
+    private void resizeCheck() {
+        if (size > (capacity * 0.75)) {
             capacity *= 2;
             size = 0;
             List<LinkedList<Student>> oldBuckets = buckets;
@@ -171,18 +201,13 @@ public class StudentSet implements Set<Student> {
                 '}';
     }
 
-    private class StudentIterator implements Iterator <Student> {
-
-        // init cursor 1,2 -> curr bucket, current index
-        // toArray() and store its result
+    private class StudentIterator implements Iterator<Student> {
 
         private int current;
-        private int size;
-        Object [] elements;
+        private final Student[] elements;
 
-        public StudentIterator () {
-            size = size();
-            elements = toArray();
+        public StudentIterator() {
+            elements = toArray(new Student[size]);
         }
 
         @Override
@@ -196,11 +221,9 @@ public class StudentSet implements Set<Student> {
             if (elementIndex >= size) {
                 throw new NoSuchElementException();
             }
-            Student nextStudent = null;
 
-            nextStudent = (Student) elements[elementIndex];
             current++;
-            return nextStudent;
+            return elements[elementIndex];
         }
     }
 
