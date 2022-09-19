@@ -90,33 +90,20 @@ public class StudentSet implements Set<Student> {
         return ts;
     }
 
-    private boolean hasNull() {
-        for (LinkedList<Student> bucket : buckets) {
-            for (Student st : bucket) {
-                if (st == null) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     @Override
     public boolean add(Student student) {
         resizeCheck();
         int index = calculateIndex(student);
         LinkedList<Student> bucket = buckets.get(index);
-        if (student == null && hasNull()) {
-            return false;
-        }
-        if (student == null) {
-            bucket.add(student);
-            size++;
-            return true;
-        }
         for (Student st : bucket) {
-            if (student.hashCode() == st.hashCode() && student.equals(st)) {
+            if (student == null && st == null) {
                 return false;
+            }
+            if (st != null) {
+                if (st.equals(student)) {
+                    return false;
+                }
             }
         }
         bucket.add(student);
@@ -131,21 +118,23 @@ public class StudentSet implements Set<Student> {
             int index = calculateIndex(student);
             LinkedList<Student> bucket = buckets.get(index);
             for (Student st : bucket) {
-                if (o == null && st != null) continue;
-                if (o == null && st == null) {
-                    bucket.remove(student);
-                    size--;
-                    return true;
+                if (student == null && st == null) {
+                    return removeStudentFromBucket(student, bucket);
                 }
-                if (o != null && st == null) continue;
-                if (student.hashCode() == st.hashCode() && student.equals(st)) {
-                    bucket.remove(student);
-                    size--;
-                    return true;
+                if (st != null) {
+                    if (st.equals(student)) {
+                        return removeStudentFromBucket(student, bucket);
+                    }
                 }
             }
         }
         return false;
+    }
+
+    private boolean removeStudentFromBucket(Student student, LinkedList<Student> bucket) {
+        bucket.remove(student);
+        size--;
+        return true;
     }
 
     @Override
