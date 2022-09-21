@@ -5,8 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
@@ -235,4 +237,25 @@ class StudentSetTest {
 
         assertThat(students).containsExactlyInAnyOrderElementsOf(expectedArray);
     }
+
+    @Test
+    void removeAllMethodIsNotImplemented_shouldThrowException() {
+        assertThrows(UnsupportedOperationException.class, () ->
+                set.removeAll(new ArrayList<Student>()));
+    }
+
+    @Test
+    void retainAllMethodIsNotImplemented_shouldThrowException() {
+        assertThrows(UnsupportedOperationException.class, () ->
+                set.retainAll(new ArrayList<Student>()));
+
+    }
+
+    @Test
+    void containsAllMethodIsNotImplemented_shouldThrowException() {
+        assertThrows(UnsupportedOperationException.class, () ->
+                set.containsAll(new ArrayList<Student>()));
+
+    }
+
 }
